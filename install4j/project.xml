@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<projects>
+    
+    <project name="教师端">
+	    <step name="用户协议">
+	        <license file="./license.t"/>
+	    </step>
+	    <step name="复制文件">
+	        <file-copy source="" destination=""/>
+	    </step>
+	    <step name="数据库初始化">
+	        <mongodb-data collection="user">
+	        <![CDATA[
+	        	{ "_id" : "admin", "passWd" : "202cb962ac59075b964b07152d234b70", "type" : 0 }
+	        ]]>
+	        </mongodb-data>
+	    </step>
+	    <step name="本地配置">
+	        <properties file="./etc/realm.properties">
+	            <entry name="教师端IP地址" key="communicator.ip" value="127.0.0.1"/>
+	            
+	            <advance>
+		            <entry name="Http端口号" key="http.port" value="7027"/>
+		            <entry name="应用通讯端口号" key="communicator.port" value="7028"/>
+		            <entry name="设备通讯端口号" key="device.communicator.port" value="7029"/>
+		            <entry name="机构树根节点" key="root.organization.tree" value="[组织机构]"/>
+		            <entry name="资料树根节点" key="root.document.tree" value="[HOME]"/>
+		            <entry name="报告模板根节点" key="root.report.tree" value="[REPORT]"/>
+	            </advance>
+	        </properties>
+	    </step>
+	</project>
+    
+    <project name="学生端">
+	    <step name="用户协议">
+	        <license file="./etc/license.txt"/>
+	    </step>
+	    <step name="复制文件">
+	        <file-copy source="" destination=""/>
+	    </step>
+	    <step name="数据库初始化">
+	        <mongodb-data collection="user">
+	        <![CDATA[
+	        	{ "_id" : "admin", "passWd" : "202cb962ac59075b964b07152d234b70", "type" : 0 }
+	        ]]>
+	        </mongodb-data>
+	    </step>
+	    <step name="本地配置">
+	        <properties file="./etc/realm.properties">
+	            <entry name="教师端IP地址" key="communicator.ip" value="127.0.0.1"/>
+	            
+	            <advance>
+		            <entry name="Http端口号" key="http.port" value="7027"/>
+		            <entry name="应用通讯端口号" key="communicator.port" value="7028"/>
+		            <entry name="设备通讯端口号" key="device.communicator.port" value="7029"/>
+		            <entry name="机构树根节点" key="root.organization.tree" value="[组织机构]"/>
+		            <entry name="资料树根节点" key="root.document.tree" value="[HOME]"/>
+		            <entry name="报告模板根节点" key="root.report.tree" value="[REPORT]"/>
+	            </advance>
+	        </properties>
+	    </step>
+	</project>
+    
+</projects>
