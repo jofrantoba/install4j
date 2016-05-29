@@ -24,8 +24,8 @@ import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
 import com.gridsofts.install4j.adapter.FileCopy;
-import com.gridsofts.install4j.adapter.MongoData;
-import com.gridsofts.install4j.adapter.Properties;
+import com.gridsofts.install4j.adapter.MongoDataInit;
+import com.gridsofts.install4j.adapter.ProfileConfig;
 import com.gridsofts.install4j.adapter.UserLicense;
 import com.gridsofts.install4j.model.IStep;
 import com.gridsofts.install4j.model.Project;
@@ -42,9 +42,9 @@ public class Configurator {
 	public static final Deque<IStep> eStack = new ArrayDeque<>();
 	public static final Deque<StringBuffer> contentStack = new ArrayDeque<>();
 	
-	public static List<Properties.Entry> entryList = null;
-	public static List<Properties.Entry> advanceList = null;
-	public static List<Properties.Entry> entryListPointer = null;
+	public static List<ProfileConfig.Entry> entryList = null;
+	public static List<ProfileConfig.Entry> advanceList = null;
+	public static List<ProfileConfig.Entry> entryListPointer = null;
 	
 	public static Map<String, Project> parse(File file) {
 		
@@ -102,25 +102,30 @@ public class Configurator {
 						
 						fcopy.setName(stepNameStack.pop());
 						fcopy.setSource(attributes.getValue("source"));
-						fcopy.setDestination(attributes.getValue("destination"));
 					}
 					
 					else if ("mongodb-data".equalsIgnoreCase(qName)) {
-						MongoData mongoData = new MongoData();
+						MongoDataInit mongoData = new MongoDataInit();
 						eStack.push(mongoData);
 						
 						mongoData.setName(stepNameStack.pop());
+						mongoData.setHost(attributes.getValue("host"));
+						
+						if (attributes.getIndex("port") >= 0) {
+							mongoData.setPort(Integer.parseInt(attributes.getValue("port")));
+						}
+						mongoData.setDbname(attributes.getValue("dbname"));
 						mongoData.setCollection(attributes.getValue("collection"));
 
 						contentStack.push(new StringBuffer());
 					}
 					
-					else if ("properties".equalsIgnoreCase(qName)) {
-						Properties properties = new Properties();
-						eStack.push(properties);
+					else if ("profile".equalsIgnoreCase(qName)) {
+						ProfileConfig profile = new ProfileConfig();
+						eStack.push(profile);
 						
-						properties.setName(stepNameStack.pop());
-						properties.setFile(attributes.getValue("file"));
+						profile.setName(stepNameStack.pop());
+						profile.setFile(attributes.getValue("file"));
 						
 						entryList = new ArrayList<>();
 						advanceList = new ArrayList<>();
@@ -129,7 +134,7 @@ public class Configurator {
 					}
 					
 					else if ("entry".equalsIgnoreCase(qName)) {
-						Properties.Entry pEntry = new Properties.Entry();
+						ProfileConfig.Entry pEntry = new ProfileConfig.Entry();
 						entryListPointer.add(pEntry);
 						
 						pEntry.setName(attributes.getValue("name"));
@@ -153,15 +158,15 @@ public class Configurator {
 						entryListPointer = entryList;
 					}
 					
-					else if ("properties".equalsIgnoreCase(qName)) {
-						Properties theProperties = (Properties) eStack.peek();
+					else if ("profile".equalsIgnoreCase(qName)) {
+						ProfileConfig theProfile = (ProfileConfig) eStack.peek();
 						
-						theProperties.setEntryList(entryList);
-						theProperties.setAdvanceList(advanceList);
+						theProfile.setEntryList(entryList);
+						theProfile.setAdvanceList(advanceList);
 					}
 					
 					else if ("mongodb-data".equalsIgnoreCase(qName)) {
-						((MongoData) eStack.peek()).setJsonData(contentStack.pop().toString().trim());
+						((MongoDataInit) eStack.peek()).setJsonData(contentStack.pop().toString().trim());
 					}
 				}
 

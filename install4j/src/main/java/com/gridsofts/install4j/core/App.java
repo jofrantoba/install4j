@@ -15,10 +15,13 @@ import java.util.Map;
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
 import javax.swing.JFrame;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
+import javax.swing.JProgressBar;
 import javax.swing.JToolBar;
 import javax.swing.UIManager;
 
+import org.gridsofts.swing.JDialog;
 import org.gridsofts.util.EventObject;
 
 import com.gridsofts.install4j.model.IStep;
@@ -32,61 +35,67 @@ import com.gridsofts.install4j.support.Configurator;
  */
 public class App extends JFrame implements ActionListener, AppListener {
 	private static final long serialVersionUID = 1L;
-	
-	private static final Integer BtnPreviousMask = 0b01000; 
-	private static final Integer BtnNextMask = 0b00100; 
-	private static final Integer BtnFinishMask = 0b00010; 
-	private static final Integer BtnCancelMask = 0b00001; 
-	
+
+	private static final Integer BtnPreviousMask = 0b01000;
+	private static final Integer BtnNextMask = 0b00100;
+	private static final Integer BtnFinishMask = 0b00010;
+	private static final Integer BtnCancelMask = 0b00001;
+
 	private JPanel contentPane;
-	
+
 	private JToolBar controlbar;
 	private JButton btnPrevious, btnNext, btnFinish, btnCancel;
-	
+
 	private ControlbarActionHandler controlbarHandler;
 
 	private Map<String, Project> proMap;
 	private List<IStep> stepList;
-	private int stepTotalCount, currentStepIdx;
+	private int currentStepIdx;
+
+	private File installDirectory; // 安装位置
+	
+	public static App instance = null;
 
 	public App(String title, Map<String, Project> proMap) {
 		super(title);
-
+		
 		this.proMap = proMap;
+		
+		instance = this;
 
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-		
+
 		contentPane = new JPanel(new BorderLayout());
 		getContentPane().add(contentPane, BorderLayout.CENTER);
-		
+
 		// 工具栏
 		controlbar = new JToolBar();
 		getContentPane().add(controlbar, BorderLayout.SOUTH);
-		
+
 		controlbar.setFloatable(false);
 		controlbar.setLayout(new FlowLayout(FlowLayout.RIGHT));
-		
+
 		controlbarHandler = new ControlbarActionHandler();
-		
+
 		btnPrevious = new JButton("上一步");
 		btnPrevious.setEnabled(false);
 		btnPrevious.setActionCommand("previous");
 		btnPrevious.addActionListener(controlbarHandler);
-		
+
 		btnNext = new JButton("下一步");
 		btnNext.setEnabled(false);
 		btnNext.setActionCommand("next");
 		btnNext.addActionListener(controlbarHandler);
-		
-		btnFinish = new JButton("完成");
+
+		btnFinish = new JButton("开始安装");
 		btnFinish.setEnabled(false);
 		btnFinish.setActionCommand("finish");
 		btnFinish.addActionListener(controlbarHandler);
-		
+
 		btnCancel = new JButton("取消");
 		btnCancel.setActionCommand("cancel");
 		btnCancel.addActionListener(controlbarHandler);
-		
+
 		controlbar.add(btnPrevious);
 		controlbar.add(btnNext);
 		controlbar.add(btnFinish);
@@ -113,51 +122,17 @@ public class App extends JFrame implements ActionListener, AppListener {
 
 		//
 		centralWindow();
-		
+
 		// register app listener
 		AppEventDispatcher.getInstance().addEventListener(this);
 	}
-	
+
 	private void centralWindow() {
 
 		pack();
-		
+
 		Dimension scr = Toolkit.getDefaultToolkit().getScreenSize();
 		setLocation(scr.width / 2 - getWidth() / 2, scr.height / 2 - getHeight() / 2);
-	}
-
-	/**
-	 * 显示下一个安装步骤
-	 */
-	private void showNextStep() {
-		currentStepIdx++;
-
-		if (currentStepIdx < stepList.size()) {
-			IStep currentStep = stepList.get(currentStepIdx);
-			
-			setTitle(currentStep.getName());
-
-			contentPane.removeAll();
-			contentPane.add(currentStep.getStepPane(), BorderLayout.CENTER);
-
-			contentPane.updateUI();
-
-			centralWindow();
-		}
-	}
-	
-	/**
-	 * 工具栏按钮事件处理方法
-	 */
-	private class ControlbarActionHandler implements ActionListener {
-
-		@Override
-		public void actionPerformed(ActionEvent evt) {
-			
-			if ("cancel".equalsIgnoreCase(evt.getActionCommand())) {
-				System.exit(0);
-			}
-		}
 	}
 
 	@Override
@@ -168,7 +143,6 @@ public class App extends JFrame implements ActionListener, AppListener {
 		if (project != null) {
 			stepList = project.getStepList();
 
-			stepTotalCount = stepList.size();
 			currentStepIdx = -1;
 
 			showNextStep();
@@ -180,12 +154,21 @@ public class App extends JFrame implements ActionListener, AppListener {
 		Insets insets = super.getInsets();
 		return new Insets(insets.top + 10, insets.left + 10, insets.bottom + 10, insets.right + 10);
 	}
+	
+	public File getInstallDirectory() {
+		return installDirectory;
+	}
+
+	@Override
+	public void setInstallDirectory(EventObject<File> evt) {
+		installDirectory = evt.getPayload();
+	}
 
 	@Override
 	public void setButtonsEnable(EventObject<Integer> stateEvt) {
-		
+
 		if (stateEvt != null && stateEvt.getPayload() != null) {
-			
+
 			if ((BtnPreviousMask & stateEvt.getPayload()) != 0) {
 				btnPrevious.setEnabled(true);
 			}
@@ -200,12 +183,12 @@ public class App extends JFrame implements ActionListener, AppListener {
 			}
 		}
 	}
-	
+
 	@Override
 	public void setButtonsDisable(EventObject<Integer> stateEvt) {
-		
+
 		if (stateEvt != null && stateEvt.getPayload() != null) {
-			
+
 			if ((BtnPreviousMask & stateEvt.getPayload()) != 0) {
 				btnPrevious.setEnabled(false);
 			}
@@ -217,6 +200,122 @@ public class App extends JFrame implements ActionListener, AppListener {
 			}
 			if ((BtnCancelMask & stateEvt.getPayload()) != 0) {
 				btnCancel.setEnabled(false);
+			}
+		}
+	}
+	
+	private void forButtonsState() {
+		btnPrevious.setEnabled(currentStepIdx > 0);
+		btnNext.setEnabled(currentStepIdx < stepList.size() - 1);
+		btnFinish.setEnabled(currentStepIdx == stepList.size() - 1);
+	}
+
+	/**
+	 * 显示上一个安装步骤
+	 */
+	private void showPreviousStep() {
+
+		if (currentStepIdx > 0) {
+			IStep currentStep = stepList.get(currentStepIdx);
+
+			if (currentStep.onPreviousStep()) {
+				IStep previousStep = stepList.get(--currentStepIdx);
+
+				setTitle(previousStep.getName());
+
+				contentPane.removeAll();
+				contentPane.add(previousStep.getStepPane(), BorderLayout.CENTER);
+
+				contentPane.updateUI();
+
+				centralWindow();
+			}
+		}
+		
+		forButtonsState();
+	}
+
+	/**
+	 * 显示下一个安装步骤
+	 */
+	private void showNextStep() {
+
+		if (currentStepIdx < stepList.size() - 1) {
+			IStep currentStep = null;
+			
+			if (currentStepIdx >= 0) {
+				currentStep = stepList.get(currentStepIdx);
+			}
+
+			if (currentStep == null || currentStep.onNextStep()) {
+				IStep nextStep = stepList.get(++currentStepIdx);
+
+				setTitle(nextStep.getName());
+
+				contentPane.removeAll();
+				contentPane.add(nextStep.getStepPane(), BorderLayout.CENTER);
+
+				contentPane.updateUI();
+
+				centralWindow();
+			}
+		}
+		
+		forButtonsState();
+	}
+
+	/**
+	 * 安装完成
+	 */
+	private void onFinish() {
+
+		JDialog progressDlg = new JDialog(App.this, "正在安装，请稍候...", false, 500, 100);
+		progressDlg.setDefaultCloseOperation(JDialog.DO_NOTHING_ON_CLOSE);
+
+		JProgressBar progress = new JProgressBar();
+		progressDlg.getContentPane().add(progress, BorderLayout.CENTER);
+		
+		progress.setMaximum(stepList.size() + 1);
+		progress.setValue(1);
+		
+		progressDlg.setVisible(true);
+
+		Iterator<IStep> stepItarator = stepList.iterator();
+		while (stepItarator.hasNext()) {
+			IStep step = stepItarator.next();
+
+			if (step.onFinish()) {
+				progress.setValue(progress.getValue() + 1);
+			} else {
+				progressDlg.dispose();
+				
+				JOptionPane.showMessageDialog(App.this, "第 " + progress.getValue() + " 步安装失败");
+			}
+		}
+	}
+
+	/**
+	 * 工具栏按钮事件处理方法
+	 */
+	private class ControlbarActionHandler implements ActionListener {
+
+		@Override
+		public void actionPerformed(ActionEvent evt) {
+
+			if ("cancel".equalsIgnoreCase(evt.getActionCommand())) {
+				System.exit(0);
+			}
+
+			else if ("previous".equalsIgnoreCase(evt.getActionCommand())) {
+				showPreviousStep();
+			}
+
+			else if ("next".equalsIgnoreCase(evt.getActionCommand())) {
+				showNextStep();
+			}
+
+			else if ("finish".equalsIgnoreCase(evt.getActionCommand())) {
+				onFinish();
 			}
 		}
 	}

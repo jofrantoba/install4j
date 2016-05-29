@@ -5,6 +5,7 @@
  */
 package com.gridsofts.install4j.support;
 
+import java.io.File;
 import java.util.EventListener;
 
 import org.gridsofts.util.EventObject;
@@ -15,6 +16,13 @@ import org.gridsofts.util.EventObject;
  * @author lei
  */
 public interface AppListener extends EventListener {
+	
+	/**
+	 * 设置安装位置
+	 * 
+	 * @param evt
+	 */
+	public void setInstallDirectory(EventObject<File> evt);
 
 	/**
 	 * 设置工具栏按钮可用

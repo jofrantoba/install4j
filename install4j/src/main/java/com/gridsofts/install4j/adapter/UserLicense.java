@@ -32,7 +32,7 @@ public class UserLicense implements IStep {
 
 	private boolean isFirst, isLast;
 
-	private LicensePane pane = null;
+	private StepPane pane = null;
 
 	private String name; // 步骤名称
 	private String file; // 协议文件(相对路径)
@@ -59,7 +59,7 @@ public class UserLicense implements IStep {
 	public JPanel getStepPane() {
 
 		if (pane == null) {
-			pane = new LicensePane(file);
+			pane = new StepPane(file);
 		}
 
 		return pane;
@@ -87,16 +87,16 @@ public class UserLicense implements IStep {
 	}
 
 	public boolean onFinish() {
-		return false;
+		return true;
 	}
 
-	private class LicensePane extends JPanel implements ChangeListener {
+	private class StepPane extends JPanel implements ChangeListener {
 		private static final long serialVersionUID = 1L;
 
 		private JTextArea licViewer;
 		private JCheckBox agreeChk;
 
-		public LicensePane(String licfile) {
+		public StepPane(String licfile) {
 			super(new BorderLayout());
 
 			setPreferredSize(new Dimension(600, 400));
