@@ -19,6 +19,7 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JProgressBar;
 import javax.swing.JToolBar;
+import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 
 import org.gridsofts.swing.JDialog;
@@ -269,28 +270,60 @@ public class App extends JFrame implements ActionListener, AppListener {
 	 */
 	private void onFinish() {
 
-		JDialog progressDlg = new JDialog(App.this, "正在安装，请稍候...", false, 500, 100);
+		JDialog progressDlg = new JDialog(App.this, "正在安装，请稍候...", false, 500, 70);
 		progressDlg.setDefaultCloseOperation(JDialog.DO_NOTHING_ON_CLOSE);
 
 		JProgressBar progress = new JProgressBar();
 		progressDlg.getContentPane().add(progress, BorderLayout.CENTER);
 		
-		progress.setMaximum(stepList.size() + 1);
-		progress.setValue(1);
-		
 		progressDlg.setVisible(true);
 
-		Iterator<IStep> stepItarator = stepList.iterator();
-		while (stepItarator.hasNext()) {
-			IStep step = stepItarator.next();
+		SwingUtilities.invokeLater(new Runnable() {
 
-			if (step.onFinish()) {
-				progress.setValue(progress.getValue() + 1);
-			} else {
-				progressDlg.dispose();
-				
-				JOptionPane.showMessageDialog(App.this, "第 " + progress.getValue() + " 步安装失败");
+			@Override
+			public void run() {
+				new InstallTask(progressDlg, progress, stepList.size() + 1).start();
 			}
+		});
+	}
+	
+	private class InstallTask extends Thread {
+		
+		private JDialog progressDlg;
+		private JProgressBar progress;
+		private int totalSteps;
+		
+		public InstallTask(JDialog progressDlg, JProgressBar progress, int totalSteps) {
+			this.progressDlg = progressDlg;
+			this.progress = progress;
+			this.totalSteps = totalSteps;
+		}
+
+		@Override
+		public void run() {
+
+			progress.setMaximum(totalSteps);
+			progress.setValue(1);
+			progress.updateUI();
+			
+			Iterator<IStep> stepItarator = stepList.iterator();
+			while (stepItarator.hasNext()) {
+				IStep step = stepItarator.next();
+
+				if (step.onFinish()) {
+					progress.setValue(progress.getValue() + 1);
+					progress.updateUI();
+					
+				} else {
+					progressDlg.dispose();
+					
+					JOptionPane.showMessageDialog(App.this, "第 " + progress.getValue() + " 步安装失败");
+					return;
+				}
+			}
+
+			progressDlg.dispose();
+			JOptionPane.showMessageDialog(App.this, "安装完毕");
 		}
 	}
 

@@ -114,26 +114,28 @@ public class ProfileConfig implements IStep, AppListener {
 	public boolean onFinish() {
 
 		File destPropertiesFile = new File(installDirectory.getPath() + "/" + file);
-		if (destPropertiesFile.exists() && destPropertiesFile.isFile()) {
-			Properties properties = new Properties();
+		if (!destPropertiesFile.getParentFile().exists()) {
+			destPropertiesFile.getParentFile().mkdirs();
+		}
+		
+		Properties properties = new Properties();
 
-			try (FileInputStream inStream = new FileInputStream(destPropertiesFile)) {
-				properties.load(inStream);
-			} catch (Throwable e) {
-			}
+		try (FileInputStream inStream = new FileInputStream(destPropertiesFile)) {
+			properties.load(inStream);
+		} catch (Throwable e) {
+		}
 
-			//
-			if (pane.getFldList() != null) {
-				for (JTextField inputFld : pane.getFldList()) {
-					properties.put(inputFld.getName(), inputFld.getText());
-				}
+		//
+		if (pane.getFldList() != null) {
+			for (JTextField inputFld : pane.getFldList()) {
+				properties.put(inputFld.getName(), inputFld.getText());
 			}
-			
-			try (FileOutputStream outStream = new FileOutputStream(destPropertiesFile)) {
-				properties.store(outStream, "Edit by install4j@gridsofts.com");
-				return true;
-			} catch (Throwable e) {
-			}
+		}
+		
+		try (FileOutputStream outStream = new FileOutputStream(destPropertiesFile)) {
+			properties.store(outStream, "Edit by install4j@gridsofts.com");
+			return true;
+		} catch (Throwable e) {
 		}
 
 		return true;

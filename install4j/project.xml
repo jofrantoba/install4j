@@ -9,7 +9,7 @@
 	        <file-copy source="./src/main/java/com/gridsofts/install4j/adapter"/>
 	    </step>
 	    <step name="数据库初始化">
-	        <mongodb-data host="192.168.204.50" port="30000" dbname="lats-wdy" collection="useraaa">
+	        <mongodb-data host="192.168.148.50" port="30000" dbname="lats-wdy" collection="useraaa">
 	        <![CDATA[
 	        	{ "_id" : "admin", "passWd" : "202cb962ac59075b964b07152d234b70", "type" : 0 }
 	        ]]>
