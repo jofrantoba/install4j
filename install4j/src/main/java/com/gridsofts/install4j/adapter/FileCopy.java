@@ -126,12 +126,12 @@ public class FileCopy implements IStep {
 		return false;
 	}
 
-	private void copyFiles(File file, String dirName, String installDirectory)
+	private void copyFiles(File file, String destination, String directory)
 			throws FileNotFoundException, IOException {
 
 		if (file.exists() && file.isFile()) {
 
-			File dest = new File(installDirectory + dirName + "/" + file.getName());
+			File dest = new File(directory + destination);
 			if (!dest.getParentFile().exists()) {
 				dest.getParentFile().mkdirs();
 			}
@@ -145,7 +145,7 @@ public class FileCopy implements IStep {
 			File[] files = file.listFiles();
 
 			for (File f : files) {
-				copyFiles(f, dirName + "/" + file.getName(), installDirectory);
+				copyFiles(f, destination + "/" + f.getName(), directory);
 			}
 		}
 	}
