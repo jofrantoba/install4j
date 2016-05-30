@@ -14,6 +14,8 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParser;
@@ -37,19 +39,21 @@ import com.gridsofts.install4j.model.Project;
  */
 public class Configurator {
 
+	private static final Pattern SysPropertyExp = Pattern.compile("\\{([^\\{\\}]+)\\}");
+
 	public static final Deque<Project> proStack = new ArrayDeque<>();
 	public static final Deque<String> stepNameStack = new ArrayDeque<>();
 	public static final Deque<IStep> eStack = new ArrayDeque<>();
 	public static final Deque<StringBuffer> contentStack = new ArrayDeque<>();
-	
+
 	public static List<ProfileConfig.Entry> entryList = null;
 	public static List<ProfileConfig.Entry> advanceList = null;
 	public static List<ProfileConfig.Entry> entryListPointer = null;
-	
+
 	public static Map<String, Project> parse(File file) {
-		
+
 		Map<String, Project> configurationMap = new HashMap<>();
-		
+
 		proStack.clear();
 		stepNameStack.clear();
 		eStack.clear();
@@ -79,11 +83,11 @@ public class Configurator {
 					if ("project".equalsIgnoreCase(qName)) {
 						Project project = new Project();
 						proStack.push(project);
-						
+
 						project.setName(attributes.getValue("name"));
 						project.setStepList(new ArrayList<>());
 					}
-					
+
 					else if ("step".equalsIgnoreCase(qName)) {
 						stepNameStack.push(attributes.getValue("name"));
 					}
@@ -91,26 +95,33 @@ public class Configurator {
 					else if ("license".equalsIgnoreCase(qName)) {
 						UserLicense license = new UserLicense();
 						eStack.push(license);
-						
+
 						license.setName(stepNameStack.pop());
 						license.setFile(attributes.getValue("file"));
 					}
-					
-					else if ("file-copy".equalsIgnoreCase(qName)) {
+
+					else if ("files".equalsIgnoreCase(qName)) {
 						FileCopy fcopy = new FileCopy();
 						eStack.push(fcopy);
-						
+
 						fcopy.setName(stepNameStack.pop());
-						fcopy.setSource(attributes.getValue("source"));
 					}
-					
+
+					else if ("file".equalsIgnoreCase(qName)) {
+						FileCopy fcopy = (FileCopy) eStack.peek();
+						
+						// 此处支持环境变量替换
+						fcopy.addEntry(replaceSysProperty(attributes.getValue("source")),
+								replaceSysProperty(attributes.getValue("destination")));
+					}
+
 					else if ("mongodb-data".equalsIgnoreCase(qName)) {
 						MongoDataInit mongoData = new MongoDataInit();
 						eStack.push(mongoData);
-						
+
 						mongoData.setName(stepNameStack.pop());
 						mongoData.setHost(attributes.getValue("host"));
-						
+
 						if (attributes.getIndex("port") >= 0) {
 							mongoData.setPort(Integer.parseInt(attributes.getValue("port")));
 						}
@@ -119,29 +130,31 @@ public class Configurator {
 
 						contentStack.push(new StringBuffer());
 					}
-					
+
 					else if ("profile".equalsIgnoreCase(qName)) {
 						ProfileConfig profile = new ProfileConfig();
 						eStack.push(profile);
-						
+
 						profile.setName(stepNameStack.pop());
-						profile.setFile(attributes.getValue("file"));
-						
+
+						// 此处支持环境变量替换
+						profile.setFile(replaceSysProperty(attributes.getValue("file")));
+
 						entryList = new ArrayList<>();
 						advanceList = new ArrayList<>();
-						
+
 						entryListPointer = entryList;
 					}
-					
+
 					else if ("entry".equalsIgnoreCase(qName)) {
 						ProfileConfig.Entry pEntry = new ProfileConfig.Entry();
 						entryListPointer.add(pEntry);
-						
+
 						pEntry.setName(attributes.getValue("name"));
 						pEntry.setKey(attributes.getValue("key"));
 						pEntry.setValue(attributes.getValue("value"));
 					}
-					
+
 					else if ("advance".equalsIgnoreCase(qName)) {
 						entryListPointer = advanceList;
 					}
@@ -149,22 +162,22 @@ public class Configurator {
 
 				@Override
 				public void endElement(String uri, String localName, String qName) throws SAXException {
-					
+
 					if ("step".equalsIgnoreCase(qName)) {
 						proStack.peek().getStepList().add(eStack.pop());
 					}
-					
+
 					else if ("advancen".equalsIgnoreCase(qName)) {
 						entryListPointer = entryList;
 					}
-					
+
 					else if ("profile".equalsIgnoreCase(qName)) {
 						ProfileConfig theProfile = (ProfileConfig) eStack.peek();
-						
+
 						theProfile.setEntryList(entryList);
 						theProfile.setAdvanceList(advanceList);
 					}
-					
+
 					else if ("mongodb-data".equalsIgnoreCase(qName)) {
 						((MongoDataInit) eStack.peek()).setJsonData(contentStack.pop().toString().trim());
 					}
@@ -176,7 +189,7 @@ public class Configurator {
 					if (length == 0 || contentStack.isEmpty()) {
 						return;
 					}
-					
+
 					StringBuffer buf = contentStack.peek();
 					buf.append(new String(ch, start, length));
 				}
@@ -185,7 +198,20 @@ public class Configurator {
 		} catch (SAXException e) {
 		} catch (IOException e) {
 		}
-		
+
 		return configurationMap;
+	}
+
+	private static String replaceSysProperty(String str) {
+
+		Matcher matcher = SysPropertyExp.matcher(str);
+		while (matcher.find()) {
+
+			str = matcher.replaceFirst(System.getProperty(matcher.group(1)));
+
+			matcher = SysPropertyExp.matcher(str);
+		}
+
+		return str;
 	}
 }

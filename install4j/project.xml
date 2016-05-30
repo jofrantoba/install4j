@@ -6,7 +6,11 @@
 	        <license file="./license.t"/>
 	    </step>
 	    <step name="复制文件">
-	        <file-copy source="./src/main/java/com/gridsofts/install4j/adapter"/>
+	        <files>
+	        	<file source="./src/main/java/com/gridsofts/install4j/adapter" 
+	        		destination="/install4j/adapter"/>
+	        	<file source="{JDK_HOME}" destination="/jdk"/>
+	        </files>
 	    </step>
 	    <step name="数据库初始化">
 	        <mongodb-data host="192.168.148.50" port="30000" dbname="lats-wdy" collection="useraaa">
@@ -16,7 +20,7 @@
 	        </mongodb-data>
 	    </step>
 	    <step name="本地配置">
-	        <profile file="./etc/realm.properties">
+	        <profile file="/etc/realm.properties">
 	            <entry name="教师端IP地址" key="communicator.ip" value="127.0.0.1"/>
 	            
 	            <advance>
@@ -36,7 +40,10 @@
 	        <license file="./etc/license.txt"/>
 	    </step>
 	    <step name="复制文件">
-	        <file-copy source="" destination=""/>
+	        <files>
+	        	<file source="./src/main/java/com/gridsofts/install4j/adapter" 
+	        		destination="/install4j/adapter"/>
+	        </files>
 	    </step>
 	    <step name="数据库初始化">
 	        <mongodb-data collection="user">

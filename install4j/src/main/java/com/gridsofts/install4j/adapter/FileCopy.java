@@ -14,6 +14,7 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -47,7 +48,7 @@ public class FileCopy implements IStep {
 	private boolean isFirst, isLast;
 
 	private String name;
-	private String source;
+	private List<FileEntry> entryList = new ArrayList<>();
 
 	public String getName() {
 		return name;
@@ -57,18 +58,22 @@ public class FileCopy implements IStep {
 		this.name = name;
 	}
 
-	public String getSource() {
-		return source;
+	public List<FileEntry> getEntryList() {
+		return entryList;
 	}
 
-	public void setSource(String source) {
-		this.source = source;
+	public void setEntryList(List<FileEntry> entryList) {
+		this.entryList = entryList;
+	}
+
+	public void addEntry(String source, String destination) {
+		entryList.add(new FileEntry(source, destination));
 	}
 
 	public JPanel getStepPane() {
 
 		if (pane == null) {
-			pane = new StepPane(source);
+			pane = new StepPane(entryList);
 		}
 
 		return pane;
@@ -107,22 +112,26 @@ public class FileCopy implements IStep {
 					new EventObject<File>(FileCopy.this, filePath));
 
 			// prepare copy files
-			File sourceDir = new File(source);
-			try {
-				copyFiles(sourceDir, "", filePath.getPath());
-				return true;
-			} catch (Throwable e) {
+			if (entryList != null) {
+				try {
+					for (FileEntry entry : entryList) {
+						copyFiles(new File(entry.source), entry.destination, filePath.getPath());
+					}
+					return true;
+				} catch (Throwable e) {
+				}
 			}
 		}
 
 		return false;
 	}
 
-	private void copyFiles(File file, String dirName, String destination) throws FileNotFoundException, IOException {
+	private void copyFiles(File file, String dirName, String installDirectory)
+			throws FileNotFoundException, IOException {
 
 		if (file.exists() && file.isFile()) {
 
-			File dest = new File(destination + dirName + file.getName());
+			File dest = new File(installDirectory + dirName + "/" + file.getName());
 			if (!dest.getParentFile().exists()) {
 				dest.getParentFile().mkdirs();
 			}
@@ -134,9 +143,9 @@ public class FileCopy implements IStep {
 			}
 		} else if (file.exists() && file.isDirectory()) {
 			File[] files = file.listFiles();
-			
+
 			for (File f : files) {
-				copyFiles(f, dirName + "/" + file.getName(), destination);
+				copyFiles(f, dirName + "/" + file.getName(), installDirectory);
 			}
 		}
 	}
@@ -147,7 +156,7 @@ public class FileCopy implements IStep {
 		private JEditableTree sourceFileTree;
 		private JTextField filePathFld;
 
-		public StepPane(String sourceDir) {
+		public StepPane(List<FileEntry> entryList) {
 			super(new BorderLayout());
 
 			setPreferredSize(new Dimension(600, 400));
@@ -171,15 +180,22 @@ public class FileCopy implements IStep {
 			btnChoose.addActionListener(this);
 
 			// Retrieve source files
-			File sourceFile = new File(sourceDir);
-			if (sourceFile.exists()) {
-				sourceFileTree.setRootTreeNode(retrieveSourceDir(sourceFile));
+			if (entryList != null) {
+				FileTreeNode rootNode = new FileTreeNode("程序文件");
+				for (FileEntry entry : entryList) {
+
+					File sourceFile = new File(entry.source);
+					if (sourceFile.exists()) {
+						rootNode.add(retrieveSourceDir(sourceFile));
+					}
+				}
+				sourceFileTree.setRootTreeNode(rootNode);
 				sourceFileTree.expandAll();
 			}
 		}
 
-		private FileNode retrieveSourceDir(File sourceFile) {
-			FileNode rootNode = new FileNode(sourceFile.getName());
+		private FileTreeNode retrieveSourceDir(File sourceFile) {
+			FileTreeNode rootNode = new FileTreeNode(sourceFile.getName());
 
 			if (sourceFile.isDirectory()) {
 				File[] files = sourceFile.listFiles();
@@ -211,13 +227,25 @@ public class FileCopy implements IStep {
 		}
 	}
 
-	private class FileNode implements ITreeNode {
+	private class FileEntry implements Serializable {
+		private static final long serialVersionUID = 1L;
+
+		private String source;
+		private String destination;
+
+		public FileEntry(String source, String destination) {
+			this.source = source;
+			this.destination = destination;
+		}
+	}
+
+	private class FileTreeNode implements ITreeNode {
 
 		private String name;
 
-		private List<FileNode> children = new ArrayList<>();
+		private List<FileTreeNode> children = new ArrayList<>();
 
-		public FileNode(String name) {
+		public FileTreeNode(String name) {
 			setName(name);
 		}
 
@@ -233,7 +261,7 @@ public class FileCopy implements IStep {
 
 		@Override
 		public void add(ITreeNode child) {
-			children.add((FileNode) child);
+			children.add((FileTreeNode) child);
 		}
 
 		@Override

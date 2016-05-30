@@ -3,7 +3,6 @@ package com.gridsofts.install4j.core;
 import java.awt.BorderLayout;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
-import java.awt.Insets;
 import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -68,6 +67,8 @@ public class App extends JFrame implements ActionListener, AppListener {
 
 		contentPane = new JPanel(new BorderLayout());
 		getContentPane().add(contentPane, BorderLayout.CENTER);
+		
+		contentPane.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
 		// 工具栏
 		controlbar = new JToolBar();
@@ -150,12 +151,6 @@ public class App extends JFrame implements ActionListener, AppListener {
 		}
 	}
 
-	@Override
-	public Insets getInsets() {
-		Insets insets = super.getInsets();
-		return new Insets(insets.top + 10, insets.left + 10, insets.bottom + 10, insets.right + 10);
-	}
-	
 	public File getInstallDirectory() {
 		return installDirectory;
 	}
@@ -324,6 +319,7 @@ public class App extends JFrame implements ActionListener, AppListener {
 
 			progressDlg.dispose();
 			JOptionPane.showMessageDialog(App.this, "安装完毕");
+			System.exit(0);
 		}
 	}
 
@@ -376,6 +372,8 @@ public class App extends JFrame implements ActionListener, AppListener {
 			}
 
 			new App(programName + "安装向导", proMap).setVisible(true);
+			
+			JOptionPane.showMessageDialog(App.instance, "JDK_HOME:" + System.getProperty("JDK_HOME"));
 		}
 	}
 }
