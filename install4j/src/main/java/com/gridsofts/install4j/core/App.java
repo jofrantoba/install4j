@@ -372,8 +372,6 @@ public class App extends JFrame implements ActionListener, AppListener {
 			}
 
 			new App(programName + "安装向导", proMap).setVisible(true);
-			
-			JOptionPane.showMessageDialog(App.instance, "JDK_HOME:" + System.getProperty("JDK_HOME"));
 		}
 	}
 }
