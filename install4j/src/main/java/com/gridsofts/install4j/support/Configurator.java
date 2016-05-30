@@ -207,7 +207,9 @@ public class Configurator {
 		Matcher matcher = SysPropertyExp.matcher(str);
 		while (matcher.find()) {
 
-			str = matcher.replaceFirst(System.getProperty(matcher.group(1)));
+			String replacement = System.getProperty(matcher.group(1));
+			// 此处不能使用matcher.replaceFirst方法，它会将路径中的反斜线视为转义字符
+			str = str.substring(0, matcher.start()) + replacement + str.substring(matcher.end());
 
 			matcher = SysPropertyExp.matcher(str);
 		}
