@@ -16,6 +16,7 @@ import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 
 import org.bson.Document;
+import org.gridsofts.util.StringUtil;
 
 import com.gridsofts.install4j.model.IStep;
 import com.mongodb.MongoClient;
@@ -117,6 +118,10 @@ public class MongoDataInit implements IStep {
 
 	public boolean onFinish() {
 
+		if (StringUtil.isEmpty(jsonData)) {
+			return true;
+		}
+
 		try (MongoClient mongoCli = new MongoClient(host, port);) {
 			MongoDatabase mongoDb = mongoCli.getDatabase(dbname);
 
@@ -130,7 +135,7 @@ public class MongoDataInit implements IStep {
 					while ((temp = dataReader.readLine()) != null) {
 						collec.insertOne(Document.parse(temp));
 					}
-					
+
 					return true;
 				} catch (Throwable e) {
 					e.printStackTrace();
